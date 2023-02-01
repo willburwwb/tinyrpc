@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -194,8 +195,14 @@ func (client *Client) Go(serviceMethod string, argv interface{}, reply interface
 	client.sendCall(call)
 	return call
 }
-func (client *Client) Call(serviceMethod string, argv interface{}, reply interface{}) error {
+func (client *Client) Call(ctx context.Context, serviceMethod string, argv interface{}, reply interface{}) error {
 	call := client.Go(serviceMethod, argv, reply, make(chan *Call, 1))
-	call = <-call.Done
-	return call.Error
+	//call = <-call.Done
+	select {
+	case <-ctx.Done():
+		_ = client.removeCall(call.Num)
+		return errors.New("rpc client: timeout")
+	case call = <-call.Done:
+		return call.Error
+	}
 }

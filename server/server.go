@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 	"tinyrpc/codec"
 )
 
@@ -65,7 +66,7 @@ func (server *Server) ServeConn(conn net.Conn) {
 			break
 		}
 		group.Add(1)
-		go server.HandleRequest(c, request, send, group)
+		go server.HandleRequest(c, request, send, group, time.Second)
 	}
 	group.Wait()
 }
@@ -125,16 +126,24 @@ func (server *Server) ReadRequest(c codec.Codec) (*Request, error) {
 	log.Println("server decode request successfully", request.header, request.argv.Elem())
 	return request, nil
 }
-func (server *Server) HandleRequest(c codec.Codec, request *Request, send *sync.Mutex, group *sync.WaitGroup) {
+func (server *Server) HandleRequest(c codec.Codec, request *Request, send *sync.Mutex, group *sync.WaitGroup, timeout time.Duration) {
 	defer group.Done()
 	log.Println("------------server handle request------------")
 
 	//replyString := "rpc response your num " + strconv.Itoa(int(request.header.Num))
 	//request.reply = reflect.ValueOf(replyString)
-
-	err := request.service.call(request.method, request.argv, request.reply)
-	if err != nil {
-		request.header.Error = err
+	called := make(chan struct{})
+	go func() {
+		err := request.service.call(request.method, request.argv, request.reply)
+		if err != nil {
+			request.header.Error = err
+		}
+		called <- struct{}{}
+	}()
+	select {
+	case <-time.After(timeout):
+		request.header.Error = errors.New("server error: handle request timeout")
+	case <-called:
 	}
 	server.SendResponse(c, request, send)
 }

@@ -1,11 +1,13 @@
 package test
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net"
 	"sync"
 	"testing"
+	"time"
 	"tinyrpc/client"
 	"tinyrpc/server"
 )
@@ -58,7 +60,9 @@ func TestServer2(t *testing.T) {
 			defer group.Done()
 			argv := &Argv{A: 1, B: i}
 			var reply Reply
-			if err := c.Call("TestAdd.Add", argv, &reply); err != nil {
+
+			ctx, _ := context.WithTimeout(context.Background(), time.Second)
+			if err := c.Call(ctx, "TestAdd.Add", argv, &reply); err != nil {
 				log.Println("call error:", err)
 				return
 			}

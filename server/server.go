@@ -101,7 +101,7 @@ func (server *Server) ReadRequest(c codec.Codec) (*Request, error) {
 	log.Println("------------server read request------------")
 	if err := c.ReadHeader(&header); err != nil {
 		if err != io.EOF { //EOF代表读完，不应该输出error
-			log.Println("server error: read request header", err)
+			log.Println("server error: read request header", err, header.ServiceMethod, header.Num)
 		}
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (server *Server) SendResponse(c codec.Codec, request *Request, send *sync.M
 	}
 }
 
-var defaultServer *Server
+var defaultServer = &Server{}
 
 func Accept(lis net.Listener) {
 	defaultServer.Accept(lis)

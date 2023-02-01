@@ -40,7 +40,8 @@ func NewService(serviceValue interface{}) *Service {
 	s := new(Service)
 	s.serviceValue = reflect.ValueOf(serviceValue)
 	s.serviceType = reflect.TypeOf(serviceValue)
-	s.name = s.serviceType.Name()
+	log.Printf("serviceType %v serviceValue %v\n", s.serviceType, s.serviceValue)
+	s.name = s.serviceType.Elem().Name()
 	s.method = make(map[string]*serviceMethod)
 	for i := 0; i < s.serviceType.NumMethod(); i++ {
 		serviceMethodType := s.serviceType.Method(i).Type
@@ -55,6 +56,7 @@ func NewService(serviceValue interface{}) *Service {
 			replyType: serviceMethodType.In(2),
 			method:    s.serviceType.Method(i),
 		}
+		log.Printf("service %v register %v\n", s.name, s.serviceType.Method(i).Name)
 	}
 	return s
 }

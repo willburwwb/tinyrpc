@@ -25,7 +25,7 @@ func (client *Client) Close() error {
 	defer client.clientMux.Unlock()
 
 	client.closing = true
-	client.broadcastCall(errors.New("client has been closed"))
+	//client.broadcastCall(errors.New("client has been closed"))
 	return client.codecc.Close()
 }
 
@@ -157,6 +157,7 @@ func (client *Client) sendCall(call *Call) {
 		ServiceMethod: call.ServerMethod,
 		Num:           call.Num,
 	}
+	log.Println("client send header", header)
 	if err := client.codecc.WriteHeader(*header); err != nil {
 		_ = client.removeCall(call.Num)
 		if call != nil {

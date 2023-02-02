@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"reflect"
 	"strings"
 	"sync"
@@ -165,4 +166,25 @@ func Accept(lis net.Listener) {
 }
 func Register(serviceValue interface{}) error {
 	return defaultServer.Register(serviceValue)
+}
+func SendHeartbeat(registryAddr string, addr string) error {
+	httpClient := &http.Client{}
+
+	req, _ := http.NewRequest("POST", registryAddr, nil)
+	req.Header.Set("server", addr)
+	if _, err := httpClient.Do(req); err != nil {
+		log.Println("server error: heart beat err:", err)
+		return err
+	}
+	log.Printf("server %v send heartbeat\n", addr)
+	return nil
+}
+func ToSendHeartbeat(registryAddr string, addr string, timeout time.Duration) error {
+	t := time.NewTicker(timeout)
+	var err error
+	for err == nil {
+		<-t.C
+		err = SendHeartbeat(registryAddr, addr)
+	}
+	return nil
 }

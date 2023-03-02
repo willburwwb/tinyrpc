@@ -198,6 +198,7 @@ func (client *Client) Go(serviceMethod string, argv interface{}, reply interface
 func (client *Client) Call(ctx context.Context, serviceMethod string, argv interface{}, reply interface{}) error {
 	call := client.Go(serviceMethod, argv, reply, make(chan *Call, 1))
 	//call = <-call.Done
+	call.done()
 	select {
 	case <-ctx.Done():
 		_ = client.removeCall(call.Num)
